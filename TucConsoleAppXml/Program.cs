@@ -8,6 +8,8 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using Dapper;
 
+
+
 namespace TucConsoleAppXml
 {
     class Program
@@ -29,18 +31,56 @@ namespace TucConsoleAppXml
                  var categoryService = new CategoryService(connection);
                  var bookService = new BookService(connection);
 
+                 foreach (var element in doc.XPathSelectElements("//catalog/book"))
+                 {
+                    string id = element.Attribute("id").Value;
+                    string author = element.XPathSelectElement("author").Value;
+                    string title = element.XPathSelectElement("title").Value;
+                    string genre = element.XPathSelectElement("genre").Value;
+                    decimal price = decimal.Parse(element.XPathSelectElement("price").Value, 
+                         NumberStyles.Number,
+                         us);
+
+                    DateTime publish_date = DateTime.ParseExact(
+                        element.XPathSelectElement("publish_date").Value, "yyyy-MM-dd", null);
+                    string description = element.XPathSelectElement("description").Value;
+
+                    var cat = categoryService.FindByName(genre);
+                    if (cat == null)
+                        cat = categoryService.CreateNew(genre);
+                    var book = bookService.FindByExternalid(id);
+                    if (book == null)
+                        bookService.Create(cat,new Book
+                        {
+                            Description = description,
+                            Author = author,
+                            BookTitle = title,
+                            Published = publish_date,
+                            Externalid = id,
+                            Salesprice = price
+                        });
+                    else
+                        bookService.Update(cat, new Book {
+                            Description = description,
+                            Author = author,
+                            BookTitle = title,
+                            Published = publish_date,
+                            Externalid = id,
+                            Salesprice = price
+                        });
+
+                 }
                  //Loopa igenom alla böcker i XML-filen
                  //Skapa categpry om inte finns
                  //alt Hämta category
                  //Skapa produkt om inte finns
                  //alt Hämta product 
 
-                //Spara i databasen!
+                    //Spara i databasen!
 
-             }
+            }
 
 
-            Console.WriteLine(s);
         }
     }
 }
